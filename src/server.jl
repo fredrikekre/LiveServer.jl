@@ -23,6 +23,7 @@ function open_in_default_browser(url::AbstractString)::Bool
             false
         end
     catch ex
+        @error "update_and_close_viewers! error" exception=(ex, catch_backtrace())
         false
     end
 end
@@ -41,9 +42,7 @@ function update_and_close_viewers!(wss::Vector{HTTP.WebSockets.WebSocket})
             send(wsi, "update")
             close(wsi)
         catch e
-            if VERBOSE[]
-                @error "update_and_close_viewers! error" exception=(e, catch_backtrace())
-            end
+            @error "update_and_close_viewers! error" exception=(e, catch_backtrace())
         end
     end
     empty!(wss)
@@ -370,11 +369,9 @@ function ws_tracker(ws::HTTP.WebSockets.WebSocket)
         # that there was a forcible interruption of the websocket so that the
         # interruption can be guaranteed to be propagated.
         if !WebSockets.isok(err)
-            if VERBOSE[]
-                @error "ws_tracker error" exception=(err, catch_backtrace())
-            end
             WS_INTERRUPT[] = true
         end
+        @error "ws_tracker error" exception=(err, catch_backtrace())
     end
     return nothing
 end
@@ -461,10 +458,8 @@ function serve(fw::FileWatcher=SimpleWatcher(file_changed_callback);
         end
     catch err
         if !isa(err, InterruptException)
-            if VERBOSE[]
-                @error "serve error" exception=(err, catch_backtrace())
-            end
-            throw(err)
+            @error "serve error" exception=(err, catch_backtrace())
+            rethrow()
         end
     finally
         # cleanup: close everything that might still be alive
